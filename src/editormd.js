@@ -47,8 +47,8 @@
     };
     
     editormd.title        = editormd.$name = "Editor.md";
-    editormd.version      = "1.5.0";
-    editormd.homePage     = "https://pandao.github.io/editor.md/";
+    editormd.version      = "1.6.0";
+    editormd.homePage     = "https://github.com/ZHYCarge/mdw";
     editormd.classPrefix  = "editormd-";
     
     editormd.toolbarModes = {

@@ -79,7 +79,7 @@
         const select = document.getElementById('template-select');
         
         // 清空下拉菜单
-        select.innerHTML = '<option value="">-- 选择模板 --</option>';
+        select.innerHTML = '<option value="">选择模板</option>';
         
         // 动态添加模板选项
         templates.forEach(template => {
@@ -93,22 +93,27 @@
     }
 }
 
-    // 插入模板内容
-    async function insertTemplate() {
-        const templateUrl = document.getElementById('template-select').value;
-        if (!templateUrl) return;
+async function insertTemplate() {
+    const templateUrl = document.getElementById('template-select').value;
+    if (!templateUrl) return;
 
-        try {
-            const response = await fetch(templateUrl);
-            const content = await response.text();
-            window.md_editor.cm.replaceRange(
-                content,
-                window.md_editor.cm.getCursor()
-            );
-        } catch (err) {
-            console.error('插入模板失败:', err);
-        }
+    try {
+        // 获取模板内容
+        const response = await fetch(templateUrl);
+        const content = await response.text();
+
+        // 清空编辑器内容
+        window.md_editor.cm.setValue('');
+
+        // 在光标位置插入模板内容
+        window.md_editor.cm.replaceRange(
+            content,
+            window.md_editor.cm.getCursor()
+        );
+    } catch (err) {
+        console.error('插入模板失败:', err);
     }
+}
 
     // 文件操作相关功能
     async function loadMdFile() {

@@ -1,9 +1,9 @@
 {
   "name": "editor.md",
-  "version": "1.5.0",
-  "homepage": "https://github.com/pandao/editor.md",
+  "version": "1.6.0",
+  "homepage": "https://github.com/ZHYCarge/mdw",
   "authors": [
-    "Pandao <pandao@vip.qq.com>"
+    "ZHYCarge <ZHYCarge@zhycarge.top>"
   ],
   "description": "Open source online markdown editor.",
   "keywords": [
