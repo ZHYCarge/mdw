@@ -1,23 +1,181 @@
 <!DOCTYPE html>
 <html lang="zh">
-    <head title="MD Editor">
-        <meta charset="utf-8"/>
-<link rel="stylesheet" href="./css/editormd.css" />
- </head>
-    <body>
-<div id="test-editor">
-    <textarea style="display:none;"></textarea>
-</div>
-<script src="https://cdn.bootcss.com/jquery/1.11.3/jquery.min.js"></script>
-<script src="./editormd.min.js"></script>
-<script type="text/javascript">
+<head>
+    <meta charset="utf-8"/>
+    <link rel="stylesheet" href="./css/editormd.css"/>
+</head>
+<body>
+    
+    <!-- 编辑器容器 -->
+    <div id="test-editor">
+        <textarea style="display:none;"></textarea>
+    </div>
+
+    <script src="https://cdn.bootcss.com/jquery/1.11.3/jquery.min.js"></script>
+    <script src="./editormd.min.js"></script>
+    <script type="text/javascript">
+    // 初始化变量
+    let fileHandle = null;
+
     $(function() {
-        var editor = editormd("test-editor", {
+        // 初始化模板列表
+        loadTemplates();
+        
+        // 初始化编辑器
+        initEditor();
+        
+        // 绑定快捷键
+        document.addEventListener('keydown', handleKeyDown);
+    });
+
+    // 初始化编辑器
+    function initEditor() {
+        const content = window.localStorage.getItem("KEY_MD_EDITOR_CONTENT") || "";
+        window.md_base_url = window.localStorage.getItem("KEY_MD_EDITOR_BASE_URL");
+        
+        window.md_editor = editormd("test-editor", {
             width  : "100%",
             height : "720px",
-            path   : "./lib/"
+            path   : "./lib/",
+            toolbarIcons: function() {
+                var icons = editormd.toolbarModes.full;
+                // icons = icons.filter(function (i) {
+                //     return !['fullscreen', 'preview'].includes(i);
+                // });
+                icons.push('|', 'load_md','|','select_tmp','buttom_tmp');
+                return icons;
+            },
+            toolbarCustomIcons: {
+                load_md: '<input type="file" id="my_file" accept=".md" style="display: none;"><li><a href="javascript:;" onclick="loadMdFile()" title="load md"><i class="fa fa-upload" name="load_md"></i></a></li>',
+                select_tmp: '<select id="template-select" style="width: 200px; margin-right: 10px;"><option value="">选择模板</option></select>',
+                buttom_tmp: '<button  onclick="insertTemplate()">插入模板</button>'
+            },
+            onload: function() {
+                // 初始化编辑器内容
+                this.cm.setValue(content);
+                
+                // 启动定时保存
+                setInterval(() => {
+                    window.localStorage.setItem("KEY_MD_EDITOR_CONTENT", this.cm.getValue());
+                    if (fileHandle) autoSaveToFile();
+                }, 10000);
+            }
         });
+    }
+
+    // 加载模板列表
+    async function loadTemplates() {
+        try {
+            // 获取 docs 文件夹中的文件列表
+            const response = await fetch('./docs/');
+            const text = await response.text();
+            
+            // 解析 HTML 文件列表
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(text, 'text/html');
+            const links = htmlDoc.querySelectorAll('a');
+            
+            // 过滤出 .md 文件并添加到下拉菜单
+            const select = document.getElementById('template-select');
+            links.forEach(link => {
+                const href = link.getAttribute('href');
+                if (href.endsWith('.md')) {
+                    const option = document.createElement('option');
+                    option.value = `./docs/${href}`;
+                    option.textContent = href;
+                    select.appendChild(option);
+                }
+            });
+        } catch (err) {
+            console.error('加载模板列表失败:', err);
+        }
+    }
+
+    // 插入模板内容
+    async function insertTemplate() {
+        const templateUrl = document.getElementById('template-select').value;
+        if (!templateUrl) return;
+
+        try {
+            const response = await fetch(templateUrl);
+            const content = await response.text();
+            window.md_editor.cm.replaceRange(
+                content,
+                window.md_editor.cm.getCursor()
+            );
+        } catch (err) {
+            console.error('插入模板失败:', err);
+        }
+    }
+
+    // 文件操作相关功能
+    async function loadMdFile() {
+        try {
+            [fileHandle] = await window.showOpenFilePicker({
+                types: [{
+                    description: 'Markdown Files',
+                    accept: {'text/markdown': ['.md']}
+                }]
+            });
+            const file = await fileHandle.getFile();
+            const content = await file.text();
+            window.md_editor.cm.setValue(content);
+        } catch (err) {
+            document.getElementById('my_file').click();
+        }
+    }
+
+    async function autoSaveToFile() {
+        try {
+            const writable = await fileHandle.createWritable();
+            await writable.write(window.md_editor.cm.getValue());
+            await writable.close();
+        } catch (err) {
+            console.error('自动保存失败:', err);
+        }
+    }
+
+    async function saveFile() {
+        if (fileHandle) {
+            await autoSaveToFile();
+        } else {
+            saveAsNewFile();
+        }
+    }
+
+    async function saveAsNewFile() {
+        try {
+            const handle = await window.showSaveFilePicker({
+                types: [{
+                    description: 'Markdown Files',
+                    accept: {'text/markdown': ['.md']}
+                }]
+            });
+            const writable = await handle.createWritable();
+            await writable.write(window.md_editor.cm.getValue());
+            await writable.close();
+            fileHandle = handle;
+        } catch (err) {
+            console.error('文件保存失败:', err);
+        }
+    }
+
+    // 快捷键处理
+    function handleKeyDown(e) {
+        if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+            e.preventDefault();
+            saveFile();
+        }
+    }
+
+    // 保留原有文件上传兼容
+    document.getElementById('my_file').addEventListener('change', async function() {
+        const file = this.files[0];
+        if (file) {
+            const content = await file.text();
+            window.md_editor.cm.setValue(content);
+        }
     });
-</script>
-    </body>
+    </script>
+</body>
 </html>
