@@ -26,6 +26,7 @@
         
         // 绑定快捷键
         document.addEventListener('keydown', handleKeyDown);
+
     });
 
     // 初始化编辑器
@@ -63,33 +64,34 @@
         });
     }
 
-    // 加载模板列表
     async function loadTemplates() {
-        try {
-            // 获取 docs 文件夹中的文件列表
-            const response = await fetch('./docs/');
-            const text = await response.text();
-            
-            // 解析 HTML 文件列表
-            const parser = new DOMParser();
-            const htmlDoc = parser.parseFromString(text, 'text/html');
-            const links = htmlDoc.querySelectorAll('a');
-            
-            // 过滤出 .md 文件并添加到下拉菜单
-            const select = document.getElementById('template-select');
-            links.forEach(link => {
-                const href = link.getAttribute('href');
-                if (href.endsWith('.md')) {
-                    const option = document.createElement('option');
-                    option.value = `./docs/${href}`;
-                    option.textContent = href;
-                    select.appendChild(option);
-                }
-            });
-        } catch (err) {
-            console.error('加载模板列表失败:', err);
+    try {
+        // 获取 templates.json 文件
+        const response = await fetch('./docs/templates.json');
+        if (!response.ok) {
+            throw new Error('无法加载模板列表');
         }
+        
+        // 解析 JSON 文件
+        const templates = await response.json();
+        
+        // 获取下拉菜单元素
+        const select = document.getElementById('template-select');
+        
+        // 清空下拉菜单
+        select.innerHTML = '<option value="">-- 选择模板 --</option>';
+        
+        // 动态添加模板选项
+        templates.forEach(template => {
+            const option = document.createElement('option');
+            option.value = `./docs/${template}`; // 模板文件路径
+            option.textContent = template; // 显示文件名
+            select.appendChild(option);
+        });
+    } catch (err) {
+        console.error('加载模板列表失败:', err);
     }
+}
 
     // 插入模板内容
     async function insertTemplate() {
