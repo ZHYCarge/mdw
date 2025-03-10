@@ -3,11 +3,6 @@
 <head>
     <meta charset="utf-8"/>
     <link rel="stylesheet" href="./css/editormd.css"/>
-    <!-- 添加 PWA 相关元数据 -->
-    <link rel="icon" href="./icons/web.ico" type="image/x-icon">
-    <link rel="icon" href="./icons/icon-512x512.png" type="image/png" sizes="512x512">
-    <link rel="manifest" href="./manifest.json">
-    <meta name="theme-color" content="#ffffff">
 </head>
 <body>
     <!-- 编辑器容器 -->
@@ -29,19 +24,6 @@
         
         // 绑定快捷键
         document.addEventListener('keydown', handleKeyDown);
-
-        // 检查是否通过文件关联打开
-        if ('launchQueue' in window && 'files' in LaunchParams.prototype) {
-            launchQueue.setConsumer(async (launchParams) => {
-                if (launchParams.files.length > 0) {
-                    const fileHandle = launchParams.files[0];
-                    const file = await fileHandle.getFile();
-                    const content = await file.text();
-                    window.md_editor.cm.setValue(content);
-                    fileHandle = fileHandle;
-                }
-            });
-        }
     });
 
     // 初始化编辑器
