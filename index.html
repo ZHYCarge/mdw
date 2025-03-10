@@ -24,7 +24,6 @@
         
         // 绑定快捷键
         document.addEventListener('keydown', handleKeyDown);
-
     });
 
     // 初始化编辑器
@@ -47,7 +46,7 @@
             toolbarCustomIcons: {
                 load_md: '<input type="file" id="my_file" accept=".md" style="display: none;"><li><a href="javascript:;" onclick="loadMdFile()" title="load md"><i class="fa fa-upload" name="load_md"></i></a></li>',
                 select_tmp: '<select id="template-select" style="width: 200px; margin-right: 10px;"><option value="">选择模板</option></select>',
-                buttom_tmp: '<button  onclick="insertTemplate()">插入模板</button>'
+                buttom_tmp: '<button onclick="insertTemplate()">插入模板</button>'
             },
             onload: function() {
                 // 初始化编辑器内容
@@ -58,60 +57,63 @@
                     window.localStorage.setItem("KEY_MD_EDITOR_CONTENT", this.cm.getValue());
                     if (fileHandle) autoSaveToFile();
                 }, 10000);
+
+                // 确保编辑器初始化完成后再加载模板
+                loadTemplates();
             }
         });
     }
 
     async function loadTemplates() {
-    try {
-        // 获取 templates.json 文件
-        const response = await fetch('./docs/templates.json');
-        if (!response.ok) {
-            throw new Error('无法加载模板列表');
+        try {
+            // 获取 templates.json 文件
+            const response = await fetch('./docs/templates.json');
+            if (!response.ok) {
+                throw new Error('无法加载模板列表');
+            }
+            
+            // 解析 JSON 文件
+            const templates = await response.json();
+            
+            // 获取下拉菜单元素
+            const select = document.getElementById('template-select');
+            
+            // 清空下拉菜单
+            select.innerHTML = '<option value="">选择模板</option>';
+            
+            // 动态添加模板选项
+            templates.forEach(template => {
+                const option = document.createElement('option');
+                option.value = `./docs/${template}`; // 模板文件路径
+                option.textContent = template; // 显示文件名
+                select.appendChild(option);
+            });
+        } catch (err) {
+            console.error('加载模板列表失败:', err);
         }
-        
-        // 解析 JSON 文件
-        const templates = await response.json();
-        
-        // 获取下拉菜单元素
-        const select = document.getElementById('template-select');
-        
-        // 清空下拉菜单
-        select.innerHTML = '<option value="">选择模板</option>';
-        
-        // 动态添加模板选项
-        templates.forEach(template => {
-            const option = document.createElement('option');
-            option.value = `./docs/${template}`; // 模板文件路径
-            option.textContent = template; // 显示文件名
-            select.appendChild(option);
-        });
-    } catch (err) {
-        console.error('加载模板列表失败:', err);
     }
-}
 
-async function insertTemplate() {
-    const templateUrl = document.getElementById('template-select').value;
-    if (!templateUrl) return;
+    async function insertTemplate() {
+        const templateUrl = document.getElementById('template-select').value;
+        if (!templateUrl) return;
 
-    try {
-        // 获取模板内容
-        const response = await fetch(templateUrl);
-        const content = await response.text();
+        try {
+            // 获取模板内容
+            const response = await fetch(templateUrl);
+            const content = await response.text();
 
-        // 清空编辑器内容
-        window.md_editor.cm.setValue('');
+            // 清空编辑器内容
+            window.md_editor.cm.setValue('');
 
-        // 在光标位置插入模板内容
-        window.md_editor.cm.replaceRange(
-            content,
-            window.md_editor.cm.getCursor()
-        );
-    } catch (err) {
-        console.error('插入模板失败:', err);
+            // 在光标位置插入模板内容
+            window.md_editor.cm.replaceRange(
+                content,
+                window.md_editor.cm.getCursor()
+            );
+        } catch (err) {
+            console.error('插入模板失败:', err);
+        }
     }
-}
 
     // 文件操作相关功能
     async function loadMdFile() {
